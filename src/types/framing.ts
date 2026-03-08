@@ -40,6 +40,8 @@ export interface ResearchProjectSummary {
   frame_type: FrameType | null;
   frame_data: FrameData | null;
   extraction_status: "NOT_STARTED" | "RUNNING" | "COMPLETED" | "FAILED";
+  corpus_finalized: boolean;
+  corpus_finalized_at: string | null;
   created_at: string;
   updated_at: string;
   workspace_id: string;

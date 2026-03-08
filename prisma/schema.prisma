@@ -67,8 +67,10 @@ model ResearchProject {
   description       String?
   frame_type        FrameType?
   frame_data        Json?
-  extraction_status ExtractionStatus @default(NOT_STARTED)
-  created_at        DateTime         @default(now())
+  extraction_status   ExtractionStatus @default(NOT_STARTED)
+  corpus_finalized    Boolean          @default(false)
+  corpus_finalized_at DateTime?
+  created_at          DateTime         @default(now())
   updated_at        DateTime         @updatedAt
 
   workspace   Workspace    @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
