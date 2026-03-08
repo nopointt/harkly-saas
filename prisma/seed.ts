@@ -344,6 +344,307 @@ async function main() {
     }
   }
 
+  // ── Seed Artifacts for "Checkout abandonment analysis" ─────────────────────
+  if (checkoutProject) {
+    const existingArtifacts = await prisma.artifact.count({
+      where: { project_id: checkoutProject.id },
+    });
+
+    if (existingArtifacts === 0) {
+      // Re-use the first 5 included document IDs for source references in mock content
+      const includedDocs = await prisma.document.findMany({
+        where: { project_id: checkoutProject.id, screening_status: "INCLUDED" },
+        take: 5,
+      });
+      const docId = (idx: number) => includedDocs[idx % includedDocs.length]?.id ?? "doc-unknown";
+      const docTitle = (idx: number) =>
+        includedDocs[idx % includedDocs.length]?.title ?? "Unknown source";
+
+      // ── 1. FACT_PACK ───────────────────────────────────────────────────────
+      const factPackContent = {
+        themes: [
+          {
+            name: "Mobile UX",
+            facts: [
+              {
+                text: "Mobile users experience 85% higher cart abandonment compared to desktop users",
+                source_document_id: docId(1),
+                source_title: docTitle(1),
+                confidence: 0.88,
+                is_metric: true,
+                contradicted: false,
+              },
+              {
+                text: "Biometric payment reduces mobile abandonment by 38%",
+                source_document_id: docId(1),
+                source_title: docTitle(1),
+                confidence: 0.72,
+                is_metric: true,
+                contradicted: false,
+              },
+              {
+                text: "Small touch targets on mobile checkout forms significantly increase abandonment",
+                source_document_id: docId(1),
+                source_title: docTitle(1),
+                confidence: 0.58,
+                is_metric: false,
+                contradicted: false,
+              },
+            ],
+          },
+          {
+            name: "Trust Factors",
+            facts: [
+              {
+                text: "Security badges and trust signals at checkout increase purchase completion by 7-15% among first-time buyers",
+                source_document_id: docId(2),
+                source_title: docTitle(2),
+                confidence: 0.85,
+                is_metric: true,
+                contradicted: false,
+              },
+              {
+                text: "Progress indicators during checkout reduce perceived effort and increase completion rates by 22%",
+                source_document_id: docId(2),
+                source_title: docTitle(2),
+                confidence: 0.85,
+                is_metric: true,
+                contradicted: false,
+              },
+              {
+                text: "Visual clarity of progress significantly impacts trust and purchase intent",
+                source_document_id: docId(2),
+                source_title: docTitle(2),
+                confidence: 0.70,
+                is_metric: false,
+                contradicted: false,
+              },
+            ],
+          },
+          {
+            name: "Price Sensitivity",
+            facts: [
+              {
+                text: "Unexpected shipping costs are cited by 55% of abandoning shoppers as the primary reason",
+                source_document_id: docId(3),
+                source_title: docTitle(3),
+                confidence: 0.82,
+                is_metric: true,
+                contradicted: true,
+              },
+              {
+                text: "Showing estimated shipping costs early in checkout reduces late-stage abandonment by 33%",
+                source_document_id: docId(3),
+                source_title: docTitle(3),
+                confidence: 0.82,
+                is_metric: true,
+                contradicted: false,
+              },
+            ],
+          },
+        ],
+        generated_at: "2026-03-08T10:00:00.000Z",
+        extraction_count: 8,
+      };
+
+      const factPackArtifact = await prisma.artifact.create({
+        data: {
+          project_id: checkoutProject.id,
+          artifact_type: "FACT_PACK",
+          status: "GENERATED",
+          current_version: 1,
+          content: factPackContent as Prisma.InputJsonValue,
+        },
+      });
+      await prisma.artifactVersion.create({
+        data: {
+          artifact_id: factPackArtifact.id,
+          version: 1,
+          content: factPackContent as Prisma.InputJsonValue,
+        },
+      });
+
+      // ── 2. EVIDENCE_MAP ────────────────────────────────────────────────────
+      const evidenceMapContent = {
+        frame_components: ["P", "I", "C", "O"],
+        themes: ["Mobile UX", "Trust Factors", "Price Sensitivity", "Checkout Speed"],
+        matrix: [
+          {
+            theme: "Mobile UX",
+            components: [
+              { component: "P", strength: "strong", fact_count: 3 },
+              { component: "I", strength: "moderate", fact_count: 2 },
+              { component: "C", strength: "weak", fact_count: 1 },
+              { component: "O", strength: "strong", fact_count: 3 },
+            ],
+          },
+          {
+            theme: "Trust Factors",
+            components: [
+              { component: "P", strength: "moderate", fact_count: 2 },
+              { component: "I", strength: "strong", fact_count: 3 },
+              { component: "C", strength: "gap", fact_count: 0 },
+              { component: "O", strength: "moderate", fact_count: 2 },
+            ],
+          },
+          {
+            theme: "Price Sensitivity",
+            components: [
+              { component: "P", strength: "strong", fact_count: 4 },
+              { component: "I", strength: "weak", fact_count: 1 },
+              { component: "C", strength: "moderate", fact_count: 2 },
+              { component: "O", strength: "strong", fact_count: 3 },
+            ],
+          },
+          {
+            theme: "Checkout Speed",
+            components: [
+              { component: "P", strength: "moderate", fact_count: 2 },
+              { component: "I", strength: "strong", fact_count: 3 },
+              { component: "C", strength: "moderate", fact_count: 2 },
+              { component: "O", strength: "strong", fact_count: 4 },
+            ],
+          },
+        ],
+        generated_at: "2026-03-08T10:05:00.000Z",
+      };
+
+      const evidenceMapArtifact = await prisma.artifact.create({
+        data: {
+          project_id: checkoutProject.id,
+          artifact_type: "EVIDENCE_MAP",
+          status: "GENERATED",
+          current_version: 1,
+          content: evidenceMapContent as Prisma.InputJsonValue,
+        },
+      });
+      await prisma.artifactVersion.create({
+        data: {
+          artifact_id: evidenceMapArtifact.id,
+          version: 1,
+          content: evidenceMapContent as Prisma.InputJsonValue,
+        },
+      });
+
+      // ── 3. EMPATHY_MAP ─────────────────────────────────────────────────────
+      const empathyMapContent = {
+        say: [
+          {
+            text: '"Guest checkout reduces abandonment by up to 45% in A/B tests"',
+            source_document_id: docId(0),
+            source_title: docTitle(0),
+            is_quote: true,
+          },
+          {
+            text: '"Mobile users experience 85% higher cart abandonment compared to desktop"',
+            source_document_id: docId(1),
+            source_title: docTitle(1),
+            is_quote: true,
+          },
+          {
+            text: '"Unexpected shipping costs at checkout are cited by 55% of abandoning shoppers"',
+            source_document_id: docId(3),
+            source_title: docTitle(3),
+            is_quote: true,
+          },
+          {
+            text: '"Brands using one-click saw 18% increase in repeat purchase frequency"',
+            source_document_id: docId(4),
+            source_title: docTitle(4),
+            is_quote: true,
+          },
+        ],
+        think: [
+          {
+            text: "Customers believe mandatory account creation is an unnecessary barrier to purchasing",
+            source_document_id: docId(0),
+            source_title: docTitle(0),
+          },
+          {
+            text: "Shoppers perceive hidden shipping costs as a form of deception by the retailer",
+            source_document_id: docId(3),
+            source_title: docTitle(3),
+          },
+          {
+            text: "Users expect to see remaining checkout steps clearly to estimate total effort",
+            source_document_id: docId(2),
+            source_title: docTitle(2),
+          },
+          {
+            text: "Trust in a site is closely linked to recognisable payment logos and SSL indicators",
+            source_document_id: docId(2),
+            source_title: docTitle(2),
+          },
+        ],
+        do: [
+          {
+            text: "Abandon checkout when confronted with mandatory account creation at the final step",
+            source_document_id: docId(0),
+            source_title: docTitle(0),
+          },
+          {
+            text: "Switch to desktop when mobile checkout forms become too cumbersome",
+            source_document_id: docId(1),
+            source_title: docTitle(1),
+          },
+          {
+            text: "Click away when unexpected shipping costs appear on the order summary",
+            source_document_id: docId(3),
+            source_title: docTitle(3),
+          },
+          {
+            text: "Complete purchases faster and more often when one-click checkout is available",
+            source_document_id: docId(4),
+            source_title: docTitle(4),
+          },
+        ],
+        feel: [
+          {
+            text: "Frustration when required to create an account just to complete a simple purchase",
+            source_document_id: docId(0),
+            source_title: docTitle(0),
+          },
+          {
+            text: "Anxiety about entering payment details on sites without visible trust signals",
+            source_document_id: docId(2),
+            source_title: docTitle(2),
+          },
+          {
+            text: "Overwhelmed by multi-step checkout forms on a small mobile screen",
+            source_document_id: docId(1),
+            source_title: docTitle(1),
+          },
+          {
+            text: "Relief and satisfaction when checkout is completed in under 30 seconds",
+            source_document_id: docId(4),
+            source_title: docTitle(4),
+          },
+        ],
+        subject: "E-commerce customers",
+        generated_at: "2026-03-08T10:10:00.000Z",
+      };
+
+      const empathyMapArtifact = await prisma.artifact.create({
+        data: {
+          project_id: checkoutProject.id,
+          artifact_type: "EMPATHY_MAP",
+          status: "GENERATED",
+          current_version: 1,
+          content: empathyMapContent as Prisma.InputJsonValue,
+        },
+      });
+      await prisma.artifactVersion.create({
+        data: {
+          artifact_id: empathyMapArtifact.id,
+          version: 1,
+          content: empathyMapContent as Prisma.InputJsonValue,
+        },
+      });
+
+      console.log("Seeded 3 artifacts (Fact Pack, Evidence Map, Empathy Map) for Checkout abandonment analysis");
+    }
+  }
+
   console.log(`Seed complete — workspace: ${workspace.id}, user: ${user.id}`);
 }
 
