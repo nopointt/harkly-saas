@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient, Prisma } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -210,6 +210,137 @@ async function main() {
       }
 
       console.log(`Seeded 12 corpus documents for "Checkout abandonment analysis"`);
+    }
+  }
+
+  // Seed extractions for checkout project
+  if (checkoutProject) {
+    const existingExtractions = await prisma.extraction.count({ where: { project_id: checkoutProject.id } });
+    if (existingExtractions === 0) {
+      // Get INCLUDED documents to attach extractions to
+      const includedDocs = await prisma.document.findMany({
+        where: { project_id: checkoutProject.id, screening_status: "INCLUDED" },
+      });
+
+      if (includedDocs.length > 0) {
+        type ExtractionSeed = {
+          docIndex: number;
+          type: "FACT" | "METRIC" | "QUOTE" | "THEME" | "CONTRADICTION";
+          content: string;
+          confidence: number;
+          verified: boolean;
+          rejected: boolean;
+          metadata?: Record<string, unknown>;
+        };
+
+        const extractionSeeds: ExtractionSeed[] = [
+          // Facts (15 total: 5 verified, 5 pending, 5 rejected)
+          { docIndex: 0, type: "FACT", content: "Guest checkout reduces cart abandonment by up to 45% in A/B tests compared to mandatory account creation", confidence: 0.92, verified: true, rejected: false },
+          { docIndex: 0, type: "FACT", content: "Mandatory account creation causes 28% of users to abandon purchases during checkout", confidence: 0.89, verified: true, rejected: false },
+          { docIndex: 1, type: "FACT", content: "Mobile users experience 85% higher cart abandonment compared to desktop users", confidence: 0.88, verified: true, rejected: false },
+          { docIndex: 2, type: "FACT", content: "Progress indicators during checkout reduce perceived effort and increase completion rates", confidence: 0.85, verified: true, rejected: false },
+          { docIndex: 3, type: "FACT", content: "Showing estimated shipping costs early in checkout reduces late-stage abandonment by 33%", confidence: 0.82, verified: true, rejected: false },
+          { docIndex: 4, type: "FACT", content: "One-click checkout implementations showed average conversion lift of 29% across 12 retail brands", confidence: 0.79, verified: false, rejected: false },
+          { docIndex: 0, type: "FACT", content: "Progressive disclosure of form fields improves checkout completion rates", confidence: 0.75, verified: false, rejected: false },
+          { docIndex: 1, type: "FACT", content: "Biometric payment reduces mobile abandonment by 38%", confidence: 0.72, verified: false, rejected: false },
+          { docIndex: 2, type: "FACT", content: "Visual clarity of progress significantly impacts trust and purchase intent", confidence: 0.70, verified: false, rejected: false },
+          { docIndex: 3, type: "FACT", content: "Free shipping thresholds increase average order value for e-commerce sites", confidence: 0.68, verified: false, rejected: false },
+          { docIndex: 4, type: "FACT", content: "Stored payment credentials reduce checkout time from 4.2 minutes to under 30 seconds", confidence: 0.65, verified: false, rejected: true },
+          { docIndex: 0, type: "FACT", content: "Session timeouts are a primary cause of checkout abandonment on mobile", confidence: 0.61, verified: false, rejected: true },
+          { docIndex: 1, type: "FACT", content: "Small touch targets on mobile checkout forms significantly increase abandonment", confidence: 0.58, verified: false, rejected: true },
+          { docIndex: 2, type: "FACT", content: "Multi-step forms contribute to higher abandonment rates than single-page checkout", confidence: 0.55, verified: false, rejected: true },
+          { docIndex: 3, type: "FACT", content: "Users who can see remaining checkout steps are less likely to abandon mid-funnel", confidence: 0.52, verified: false, rejected: true },
+
+          // Metrics (8 total)
+          { docIndex: 0, type: "METRIC", content: "45% reduction in abandonment with guest checkout (A/B test result)", confidence: 0.94, verified: false, rejected: false },
+          { docIndex: 1, type: "METRIC", content: "85% higher cart abandonment on mobile vs desktop", confidence: 0.91, verified: false, rejected: false },
+          { docIndex: 2, type: "METRIC", content: "22% increase in completion rates with step-by-step progress indicators", confidence: 0.87, verified: false, rejected: false },
+          { docIndex: 3, type: "METRIC", content: "55% of abandoning shoppers cite unexpected shipping costs as primary reason", confidence: 0.85, verified: false, rejected: false },
+          { docIndex: 4, type: "METRIC", content: "29% average conversion lift from one-click checkout across 12 brands", confidence: 0.82, verified: false, rejected: false },
+          { docIndex: 0, type: "METRIC", content: "28% of users abandon due to mandatory account creation requirement", confidence: 0.90, verified: false, rejected: false },
+          { docIndex: 1, type: "METRIC", content: "38% reduction in mobile abandonment with biometric payment option", confidence: 0.78, verified: false, rejected: false },
+          { docIndex: 4, type: "METRIC", content: "18% increase in repeat purchase frequency with one-click checkout", confidence: 0.73, verified: false, rejected: false },
+
+          // Quotes (10 total: 5 verified)
+          { docIndex: 0, type: "QUOTE", content: "\"Guest checkout reduces abandonment by up to 45% in A/B tests\"", confidence: 0.95, verified: true, rejected: false },
+          { docIndex: 1, type: "QUOTE", content: "\"Mobile users experience 85% higher cart abandonment compared to desktop\"", confidence: 0.92, verified: true, rejected: false },
+          { docIndex: 2, type: "QUOTE", content: "\"Users who can see remaining steps are less likely to abandon mid-funnel\"", confidence: 0.88, verified: true, rejected: false },
+          { docIndex: 3, type: "QUOTE", content: "\"Unexpected shipping costs at checkout are cited by 55% of abandoning shoppers\"", confidence: 0.85, verified: true, rejected: false },
+          { docIndex: 4, type: "QUOTE", content: "\"Brands using one-click saw 18% increase in repeat purchase frequency\"", confidence: 0.79, verified: true, rejected: false },
+          { docIndex: 0, type: "QUOTE", content: "\"Mandatory account creation causes 28% of users to abandon purchases\"", confidence: 0.91, verified: false, rejected: false },
+          { docIndex: 1, type: "QUOTE", content: "\"Implementing biometric payment and saved card details reduces mobile abandonment by 38%\"", confidence: 0.84, verified: false, rejected: false },
+          { docIndex: 2, type: "QUOTE", content: "\"Step-by-step progress indicators during checkout reduce perceived effort\"", confidence: 0.78, verified: false, rejected: false },
+          { docIndex: 3, type: "QUOTE", content: "\"Showing estimated shipping costs on product pages reduces late-stage abandonment by 33%\"", confidence: 0.82, verified: false, rejected: false },
+          { docIndex: 4, type: "QUOTE", content: "\"One-click checkout implementations across 12 retail brands showed average conversion lift of 29%\"", confidence: 0.75, verified: false, rejected: false },
+
+          // Themes (5 total)
+          { docIndex: 0, type: "THEME", content: "Payment friction", confidence: 0.90, verified: false, rejected: false },
+          { docIndex: 1, type: "THEME", content: "Mobile UX complexity", confidence: 0.88, verified: false, rejected: false },
+          { docIndex: 2, type: "THEME", content: "Trust and transparency", confidence: 0.85, verified: false, rejected: false },
+          { docIndex: 3, type: "THEME", content: "Cost visibility", confidence: 0.82, verified: false, rejected: false },
+          { docIndex: 4, type: "THEME", content: "Checkout speed optimization", confidence: 0.79, verified: false, rejected: false },
+
+          // Contradictions (2 total)
+          {
+            docIndex: 0, type: "CONTRADICTION",
+            content: "Conflicting claims about primary cause of cart abandonment between mandatory account creation vs unexpected shipping costs",
+            confidence: 0.76,
+            verified: false, rejected: false,
+            metadata: {
+              claim_a: "Mandatory account creation causes 28% of users to abandon purchases",
+              source_a_title: "Checkout Usability: An In-Depth Study of 50 E-commerce Sites",
+              claim_b: "Unexpected shipping costs at checkout are cited by 55% of abandoning shoppers as the primary reason",
+              source_b_title: "Unexpected Shipping Costs: The #1 Reason for Cart Abandonment",
+              explanation: "These sources disagree on the primary driver of abandonment — account creation vs. shipping cost transparency",
+            },
+          },
+          {
+            docIndex: 1, type: "CONTRADICTION",
+            content: "Conflicting data on mobile abandonment impact — percentage varies significantly between sources",
+            confidence: 0.71,
+            verified: false, rejected: false,
+            metadata: {
+              claim_a: "Mobile users experience 85% higher cart abandonment compared to desktop",
+              source_a_title: "Mobile Checkout Abandonment: Causes and UX Solutions",
+              claim_b: "One-click checkout implementations showed average conversion lift of 29%",
+              source_b_title: "One-Click Checkout: Conversion Impact Study Across 12 Retail Brands",
+              explanation: "These sources present different magnitude estimates for checkout optimization impact on mobile",
+            },
+          },
+        ];
+
+        for (const seed of extractionSeeds) {
+          const doc = includedDocs[seed.docIndex % includedDocs.length];
+          await prisma.extraction.create({
+            data: {
+              project_id: checkoutProject.id,
+              document_id: doc.id,
+              extraction_type: seed.type,
+              content: seed.content,
+              confidence: seed.confidence,
+              verified: seed.verified,
+              rejected: seed.rejected,
+              metadata: (seed.metadata ?? { position_hint: "main content" }) as Prisma.InputJsonValue,
+            },
+          });
+        }
+
+        // Mark included docs as extraction_processed and update project
+        await prisma.document.updateMany({
+          where: { project_id: checkoutProject.id, screening_status: "INCLUDED" },
+          data: { extraction_processed: true },
+        });
+        await prisma.researchProject.update({
+          where: { id: checkoutProject.id },
+          data: {
+            extraction_status: "COMPLETED",
+            extraction_total: includedDocs.length,
+            extraction_done: includedDocs.length,
+          },
+        });
+
+        console.log(`Seeded ${extractionSeeds.length} extractions for "Checkout abandonment analysis"`);
+      }
     }
   }
 

@@ -68,6 +68,8 @@ model ResearchProject {
   frame_type        FrameType?
   frame_data        Json?
   extraction_status   ExtractionStatus @default(NOT_STARTED)
+  extraction_total    Int              @default(0)
+  extraction_done     Int              @default(0)
   corpus_finalized    Boolean          @default(false)
   corpus_finalized_at DateTime?
   created_at          DateTime         @default(now())
@@ -143,11 +145,12 @@ model Document {
   content          String
   word_count       Int?
   language         String?         @default("en")
-  relevance_score  Float?
-  screening_status ScreeningStatus @default(PENDING)
-  screening_reason String?
-  metadata         Json?
-  created_at       DateTime        @default(now())
+  relevance_score       Float?
+  screening_status      ScreeningStatus @default(PENDING)
+  screening_reason      String?
+  extraction_processed  Boolean         @default(false)
+  metadata              Json?
+  created_at            DateTime        @default(now())
   updated_at       DateTime        @updatedAt
 
   project     ResearchProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
@@ -177,6 +180,7 @@ model Extraction {
   confidence      Float?
   verified        Boolean        @default(false)
   rejected        Boolean        @default(false)
+  annotation      String?
   created_at      DateTime       @default(now())
   updated_at      DateTime       @updatedAt
 
