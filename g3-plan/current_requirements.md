@@ -1,62 +1,50 @@
-# Requirements Contract — TASK-HARKLY-001-E0-SCAFFOLD
+# Requirements Contract — TASK-HARKLY-06-E6-SHARE
 
 **Created:** 2026-03-08
-**Project:** Harkly SaaS (`harkly-saas`)
-**Spec:** `C:\Users\noadmin\nospace\development\harkly\branches\saas-v1\specs\e0-scaffold-auth.md`
+**Project:** Harkly SaaS — E6 Share + Export
 **Status:** ACTIVE
-
----
-
-## Context (already done — DO NOT redo)
-
-- Next.js 16 + Bun installed at `C:\Users\noadmin\nospace\development\harkly\harkly-saas`
-- Prisma 7 installed, full schema at `prisma/schema.prisma` (12 models)
-- Tailwind CSS v4 installed
-- `.env.local` has: DATABASE_URL (pooler), DIRECT_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-- `package.json` build script: `prisma generate && next build`
-- `.gitignore` correctly excludes `.env.local`
 
 ---
 
 ## Task Description
 
-Implement the E0 scaffold epic: shadcn/ui setup, Supabase Auth (email/password), auth pages (login/register/forgot-password), protected route middleware, app layout placeholder, landing page with waitlist form, waitlist API route. Apply Prisma migration to Supabase DB.
+Share page — финальный шаг workflow. `/app/projects/[id]/share` — обзор артефактов с export (Markdown, PDF, ZIP). Shareable read-only links `/share/[token]` без авторизации. Copy to clipboard. ShareLink модель в БД.
+
+Project root: `/c/Users/noadmin/nospace/development/harkly/harkly-saas/`
 
 ---
 
-## Requirements
+## Agent 1 — Backend
 
-- [ ] REQ-001: `shadcn/ui` установлен (`bunx shadcn@latest init`), компонент `Button` и `Input` работают без ошибок импорта
-- [ ] REQ-002: `@supabase/ssr` установлен, файл `src/lib/supabase/server.ts` с `createServerClient` и `src/lib/supabase/client.ts` с `createBrowserClient`
-- [ ] REQ-003: `/login` — страница с формой email+password, `signInWithPassword` через Supabase, redirect на `/app/[workspaceId]` после успешного входа
-- [ ] REQ-004: `/register` — страница с формой email+password, `signUp` через Supabase, показывает "Check your email" после успешной регистрации
-- [ ] REQ-005: `/forgot-password` — форма email, `resetPasswordForEmail` через Supabase
-- [ ] REQ-006: `src/middleware.ts` — защищает `/app/*` маршруты (если нет сессии → redirect `/login`), публичные маршруты (`/`, `/login`, `/register`, `/share/*`) пропускает
-- [ ] REQ-007: Лендинг `/` — hero секция (заголовок Harkly + описание) + waitlist форма (email input + submit button)
-- [ ] REQ-008: `POST /api/waitlist` — принимает `{ email }`, сохраняет в таблицу `waitlist_entries` через Prisma, возвращает `201 { success: true }` или `409` если email уже есть
-- [ ] REQ-009: Prisma migration применена к Supabase БД (`bunx prisma migrate dev --name init` с DIRECT_URL как DATABASE_URL), все 12 таблиц существуют
-- [ ] REQ-010: `bun run build` завершается exit 0, TypeScript без ошибок
+- REQ-101: `prisma/schema.prisma` — добавить `ShareLink` модель (`id`, `artifact_id`, `token @unique @default(uuid())`, `created_at`, relation to Artifact with Cascade delete)
+- REQ-102: `prisma/migrations/e6_share.sql` — CREATE TABLE share_links; FK to artifacts; UNIQUE index on token
+- REQ-103: `src/app/api/projects/[id]/artifacts/[artifactId]/share-link/route.ts` — POST (создать ShareLink, вернуть `{ share_link, url }` 201) + DELETE (удалить все ShareLink для артефакта, 200)
+- REQ-104: `src/app/api/share/[token]/route.ts` — GET публичный (no auth), находит ShareLink по token → artifact + project title/frame_type, 404 если не найден
+- REQ-105: `src/app/api/projects/[id]/artifacts/[artifactId]/export/zip/route.ts` — GET, генерирует ZIP со всеми Markdown экспортами артефактов проекта, Content-Disposition: attachment; filename="harkly-{projectId}.zip"
+- REQ-106: `prisma/seed.ts` update — добавить 1 ShareLink для Fact Pack артефакта (token: "test-share-token-123")
+
+**ZIP implementation:** используй `fflate` или `jszip` через `bun add`. Собери все артефакты проекта, для каждого сгенерируй Markdown через существующую логику из `src/lib/artifacts/export.ts`, запакуй в ZIP.
+
+**Auth pattern:** POST/DELETE share-link — требуют session (как в artifacts routes). GET /api/share/[token] — без auth.
+
+## Agent 2 — Frontend
+
+- REQ-201: `src/app/app/projects/[id]/share/page.tsx` — Share page: project summary card (title, frame, stats), artifact cards (тип, дата или "Not generated", кнопки Download MD/PDF/Copy/Share), "Download all as ZIP" кнопка вверху
+- REQ-202: `src/components/share/ShareLinkDialog.tsx` — Dialog: "Create link" → показывает URL /share/{token}, кнопка "Copy URL", "Revoke link" (DELETE → убирает URL из UI)
+- REQ-203: `src/app/share/[token]/page.tsx` — Public read-only page (NO auth middleware), header с Harkly logo + artifact type badge, рендер артефакта по типу (read-only), footer "Created with Harkly · Sign up" CTA; og:title + og:description meta
+- REQ-204: `src/utils/clipboard.ts` — `copyToClipboard(text: string): Promise<boolean>` (navigator.clipboard + execCommand fallback)
+- REQ-205: Toast notification — "Copied!" при успешном copy (используй `sonner` если установлен, иначе простой state div с timeout 2000ms)
+- REQ-206: Navigation — добавить "Share" ссылку в project navigation (если есть project sidebar/nav — добавь туда, иначе добавь как кнопку в layout.tsx)
+
+**Read-only artifact render:** для `/share/[token]` используй упрощённый render без edit controls. Fact Pack → таблица фактов. Evidence Map → таблица матрицы. Empathy Map → 2×2 grid. Можно использовать существующие компоненты без edit режима.
+
+**Public page не требует auth:** `/share/[token]` — маршрут вне `/app/*`, поэтому middleware не трогает. Проверь `src/middleware.ts` — убедись что `/share/*` не в protected list.
 
 ---
 
 ## Definition of Done
 
-- Все REQ-XXX проверены Coach независимо
-- `bun run build` = exit 0
-- `/login`, `/register`, `/forgot-password` рендерятся (200)
-- `/app/test` без auth → redirect `/login`
-- POST `/api/waitlist` с email → 201 в БД
-- Нет хардкода credentials
-
----
-
-## Coach Verification Checklist
-
-- [ ] `bun run build` — exit 0
-- [ ] GET `/login` → 200
-- [ ] GET `/app/test` (no auth) → redirect `/login`
-- [ ] POST `/api/waitlist` `{"email":"test@test.com"}` → 201
-- [ ] `select count(*) from waitlist_entries` в Supabase SQL editor → 1 row
-- [ ] shadcn компоненты импортируются без ошибок
-- [ ] Нет `.env.local` в git (`git status` не показывает)
-- [ ] Нет `any` типов в auth файлах
+- All REQ checked off by Coach
+- `bun run build` exits 0
+- No TypeScript errors, no `any` types
+- AC-601 through AC-620 from spec verified

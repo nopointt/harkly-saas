@@ -643,6 +643,25 @@ async function main() {
 
       console.log("Seeded 3 artifacts (Fact Pack, Evidence Map, Empathy Map) for Checkout abandonment analysis");
     }
+
+    // ── Seed ShareLink for Fact Pack artifact ───────────────────────────────
+    const factPackArtifact = await prisma.artifact.findFirst({
+      where: { project_id: checkoutProject.id, artifact_type: "FACT_PACK" },
+    });
+    if (factPackArtifact) {
+      const existingShareLink = await prisma.shareLink.findFirst({
+        where: { artifact_id: factPackArtifact.id, token: "test-share-token-123" },
+      });
+      if (!existingShareLink) {
+        await prisma.shareLink.create({
+          data: {
+            artifact_id: factPackArtifact.id,
+            token: "test-share-token-123",
+          },
+        });
+        console.log("Seeded ShareLink for Fact Pack artifact (token: test-share-token-123)");
+      }
+    }
   }
 
   // ── Seed Notes for "Checkout abandonment analysis" ─────────────────────────
