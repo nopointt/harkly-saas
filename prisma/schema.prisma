@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH / USERS ────────────────────────────────────────────────
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String?
+  avatar_url String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  workspaces WorkspaceMember[]
+  projects   ResearchProject[]
+  notes      Note[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id         String   @id @default(uuid())
+  name       String
+  slug       String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  members  WorkspaceMember[]
+  projects ResearchProject[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id           String        @id @default(uuid())
+  workspace_id String
+  user_id      String
+  role         WorkspaceRole @default(MEMBER)
+  joined_at    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([workspace_id, user_id])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ─── PROJECTS ────────────────────────────────────────────────────
+
+model ResearchProject {
+  id                String           @id @default(uuid())
+  workspace_id      String
+  user_id           String
+  title             String
+  description       String?
+  frame_type        FrameType?
+  frame_data        Json?
+  extraction_status ExtractionStatus @default(NOT_STARTED)
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [user_id], references: [id])
+  sources     Source[]
+  documents   Document[]
+  extractions Extraction[]
+  artifacts   Artifact[]
+  notes       Note[]
+
+  @@map("research_projects")
+}
+
+enum FrameType {
+  PICO
+  SPICE
+  HMW
+  DESIGN_CHALLENGE
+  ISSUE_TREE
+  HYPOTHESIS
+  FREE_FORM
+}
+
+enum ExtractionStatus {
+  NOT_STARTED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ─── CORPUS ──────────────────────────────────────────────────────
+
+model Source {
+  id         String       @id @default(uuid())
+  project_id String
+  url        String?
+  title      String?
+  type       SourceType
+  status     SourceStatus @default(PENDING)
+  metadata   Json?
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  project   ResearchProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@map("sources")
+}
+
+enum SourceType {
+  URL
+  PDF
+  DOCX
+  CSV
+  TXT
+}
+
+enum SourceStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model Document {
+  id               String          @id @default(uuid())
+  project_id       String
+  source_id        String
+  title            String?
+  content          String
+  word_count       Int?
+  language         String?         @default("en")
+  relevance_score  Float?
+  screening_status ScreeningStatus @default(PENDING)
+  screening_reason String?
+  metadata         Json?
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+
+  project     ResearchProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  source      Source          @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  extractions Extraction[]
+
+  @@map("documents")
+}
+
+enum ScreeningStatus {
+  PENDING
+  INCLUDED
+  EXCLUDED
+  MAYBE
+  FLAGGED
+}
+
+// ─── EXTRACTION ──────────────────────────────────────────────────
+
+model Extraction {
+  id              String         @id @default(uuid())
+  project_id      String
+  document_id     String
+  extraction_type ExtractionType
+  content         String
+  metadata        Json?
+  confidence      Float?
+  verified        Boolean        @default(false)
+  rejected        Boolean        @default(false)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  project  ResearchProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  document Document        @relation(fields: [document_id], references: [id], onDelete: Cascade)
+
+  @@map("extractions")
+}
+
+enum ExtractionType {
+  FACT
+  METRIC
+  QUOTE
+  THEME
+  CONTRADICTION
+}
+
+// ─── ARTIFACTS ───────────────────────────────────────────────────
+
+model Artifact {
+  id            String       @id @default(uuid())
+  project_id    String
+  artifact_type ArtifactType
+  content       Json
+  version       Int          @default(1)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+
+  project     ResearchProject   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  versions    ArtifactVersion[]
+  share_links ShareLink[]
+
+  @@map("artifacts")
+}
+
+model ArtifactVersion {
+  id          String   @id @default(uuid())
+  artifact_id String
+  content     Json
+  version     Int
+  created_at  DateTime @default(now())
+
+  artifact Artifact @relation(fields: [artifact_id], references: [id], onDelete: Cascade)
+
+  @@map("artifact_versions")
+}
+
+model ShareLink {
+  id          String   @id @default(uuid())
+  artifact_id String
+  token       String   @unique @default(uuid())
+  created_at  DateTime @default(now())
+
+  artifact Artifact @relation(fields: [artifact_id], references: [id], onDelete: Cascade)
+
+  @@map("share_links")
+}
+
+enum ArtifactType {
+  FACT_PACK
+  EVIDENCE_MAP
+  EMPATHY_MAP
+}
+
+// ─── NOTEBOOK ────────────────────────────────────────────────────
+
+model Note {
+  id             String   @id @default(uuid())
+  project_id     String
+  user_id        String
+  content        String
+  tags           String[]
+  linked_doc_ids String[]
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  project ResearchProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [user_id], references: [id])
+
+  @@map("notes")
+}
+
+// ─── WAITLIST ────────────────────────────────────────────────────
+
+model WaitlistEntry {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  created_at DateTime @default(now())
+
+  @@map("waitlist_entries")
+}
