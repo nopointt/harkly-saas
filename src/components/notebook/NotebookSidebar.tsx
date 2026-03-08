@@ -1,6 +1,17 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Note } from "@/types/notebook"
 import { useRelatedNotes } from "@/hooks/useRelatedNotes"
 import NoteCard from "./NoteCard"
@@ -31,6 +42,7 @@ export function NotebookSidebar({
   const [showNewNote, setShowNewNote] = useState(false)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [loading, setLoading] = useState(false)
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const relatedNotes = useRelatedNotes(contextText, projectId)
@@ -64,6 +76,8 @@ export function NotebookSidebar({
           const data = (await res.json()) as { notes: Note[] }
           setNotes(data.notes ?? [])
         }
+      } catch {
+        toast.error('Failed to load data')
       } finally {
         setLoading(false)
       }
@@ -104,6 +118,7 @@ export function NotebookSidebar({
   const handleNewNote = (note: Note) => {
     setNotes((prev) => [note, ...prev])
     setShowNewNote(false)
+    toast.success('Note saved')
   }
 
   const handleEdit = (note: Note) => {
@@ -114,16 +129,30 @@ export function NotebookSidebar({
   const handleUpdate = (updated: Note) => {
     setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
     setSelectedNote(updated)
+    toast.success('Note saved')
   }
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/projects/${projectId}/notes/${id}`, {
-      method: "DELETE",
-    })
-    if (res.ok) {
-      setNotes((prev) => prev.filter((n) => n.id !== id))
-      if (selectedNote?.id === id) setSelectedNote(null)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/notes/${id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        setNotes((prev) => prev.filter((n) => n.id !== id))
+        if (selectedNote?.id === id) setSelectedNote(null)
+        toast.success('Note deleted')
+      } else {
+        toast.error('Failed to delete note')
+      }
+    } catch {
+      toast.error('Failed to delete note')
+    } finally {
+      setNoteToDelete(null)
     }
+  }
+
+  const confirmDeleteNote = (noteId: string) => {
+    setNoteToDelete(noteId)
   }
 
   const FILTERS: { key: FilterType; label: string }[] = [
@@ -160,7 +189,7 @@ export function NotebookSidebar({
             projectId={projectId}
             onUpdate={handleUpdate}
             onDelete={(id) => {
-              handleDelete(id)
+              confirmDeleteNote(id)
             }}
             onClose={() => setSelectedNote(null)}
           />
@@ -246,7 +275,7 @@ export function NotebookSidebar({
                       note={note}
                       isRelated
                       onEdit={handleEdit}
-                      onDelete={handleDelete}
+                      onDelete={confirmDeleteNote}
                     />
                   ))}
                   {nonRelatedNotes.length > 0 && (
@@ -264,7 +293,7 @@ export function NotebookSidebar({
                     note={note}
                     isRelated={false}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={confirmDeleteNote}
                   />
                 ))}
 
@@ -283,6 +312,26 @@ export function NotebookSidebar({
           </>
         )}
       </div>
+
+      <AlertDialog open={noteToDelete !== null} onOpenChange={() => setNoteToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => noteToDelete && handleDelete(noteToDelete)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

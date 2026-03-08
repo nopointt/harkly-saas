@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { CorpusSource, CorpusDocument, CorpusStats, FilterTab, ScreeningStatus } from "@/types/corpus";
 import { AddSourcesPanel } from "./AddSourcesPanel";
 import { DocumentPreview } from "./DocumentPreview";
@@ -73,7 +74,7 @@ export function CorpusPage({ projectId, corpusFinalized: initialFinalized }: Pro
       setSources(data.sources);
       setStats(data.stats);
     } catch {
-      // silent
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -105,6 +106,7 @@ export function CorpusPage({ projectId, corpusFinalized: initialFinalized }: Pro
       });
       await fetchData();
     } catch {
+      toast.error('Failed to save changes');
       fetchData();
     }
   }, [projectId, fetchData]);
@@ -138,6 +140,7 @@ export function CorpusPage({ projectId, corpusFinalized: initialFinalized }: Pro
       });
       await fetchData();
     } catch {
+      toast.error('Failed to save changes');
       fetchData();
     }
   }
@@ -149,8 +152,9 @@ export function CorpusPage({ projectId, corpusFinalized: initialFinalized }: Pro
       if (!res.ok) throw new Error("Failed");
       setFinalized(true);
       setShowFinalize(false);
+      toast.success('Corpus finalized! Ready for extraction.');
     } catch {
-      // silent for now
+      toast.error('Failed to finalize corpus');
     } finally {
       setFinalizing(false);
     }

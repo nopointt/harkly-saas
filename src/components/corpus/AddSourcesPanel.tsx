@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 const VALID_EXTS = [".pdf", ".docx", ".txt", ".csv"];
 const VALID_MIME = [
@@ -62,6 +63,7 @@ export function AddSourcesPanel({ projectId, onClose, onAdded }: Props) {
       onAdded();
       onClose();
     } catch (e) {
+      toast.error('Failed to add sources');
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
@@ -98,6 +100,7 @@ export function AddSourcesPanel({ projectId, onClose, onAdded }: Props) {
       onAdded();
       onClose();
     } catch (e) {
+      toast.error('Failed to add sources');
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);

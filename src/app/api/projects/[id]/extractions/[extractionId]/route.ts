@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { verifyProjectAuth } from '@/lib/api-auth';
 import { Prisma } from "@/generated/prisma/client";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; extractionId: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { id, extractionId } = await params;
+  const auth = await verifyProjectAuth(id);
+  if (!auth.ok) return auth.response;
 
   const body = (await request.json()) as {
     verified?: boolean;

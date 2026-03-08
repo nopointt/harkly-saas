@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -102,12 +103,15 @@ export default function InsightCanvasPage({ projectId }: InsightCanvasPageProps)
   const handleGenerate = async (type: ArtifactType) => {
     setGenerating(type);
     try {
-      await fetch(`/api/projects/${projectId}/artifacts`, {
+      const res = await fetch(`/api/projects/${projectId}/artifacts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ artifact_type: type }),
       });
+      if (!res.ok) throw new Error('generation failed');
       await fetchArtifacts();
+    } catch {
+      toast.error('Failed to generate artifact');
     } finally {
       setGenerating(null);
     }
@@ -116,23 +120,33 @@ export default function InsightCanvasPage({ projectId }: InsightCanvasPageProps)
   const handleSaveFactPack = async (content: FactPackContent) => {
     const artifact = artifacts.find((a) => a.artifact_type === "FACT_PACK");
     if (!artifact) return;
-    await fetch(`/api/projects/${projectId}/artifacts/${artifact.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    await fetchArtifacts();
+    try {
+      const res = await fetch(`/api/projects/${projectId}/artifacts/${artifact.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error('save failed');
+      await fetchArtifacts();
+    } catch {
+      toast.error('Failed to save changes');
+    }
   };
 
   const handleSaveEmpathyMap = async (content: EmpathyMapContent) => {
     const artifact = artifacts.find((a) => a.artifact_type === "EMPATHY_MAP");
     if (!artifact) return;
-    await fetch(`/api/projects/${projectId}/artifacts/${artifact.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    await fetchArtifacts();
+    try {
+      const res = await fetch(`/api/projects/${projectId}/artifacts/${artifact.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error('save failed');
+      await fetchArtifacts();
+    } catch {
+      toast.error('Failed to save changes');
+    }
   };
 
   const getArtifact = (type: ArtifactType): Artifact | undefined =>

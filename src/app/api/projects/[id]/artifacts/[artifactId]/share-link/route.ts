@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 
 type RouteParams = { params: Promise<{ id: string; artifactId: string }> }
 
@@ -12,16 +12,9 @@ const BASE_URL = 'https://harkly-saas.vercel.app'
 // ---------------------------------------------------------------------------
 
 export async function POST(_request: NextRequest, { params }: RouteParams) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, artifactId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const artifact = await prisma.artifact.findUnique({ where: { id: artifactId } })
   if (!artifact || artifact.project_id !== id) {
@@ -43,16 +36,9 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
 // ---------------------------------------------------------------------------
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, artifactId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const artifact = await prisma.artifact.findUnique({ where: { id: artifactId } })
   if (!artifact || artifact.project_id !== id) {

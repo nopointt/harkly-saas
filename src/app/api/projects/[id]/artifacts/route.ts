@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 import { generateArtifactContent } from '@/lib/artifacts/generate'
 import { ArtifactType } from '@/types/artifacts'
 import { Prisma } from '@/generated/prisma/client'
@@ -16,21 +16,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
-
-  const project = await prisma.researchProject.findUnique({ where: { id } })
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const artifacts = await prisma.artifact.findMany({
     where: { project_id: id },
@@ -50,16 +38,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const project = await prisma.researchProject.findUnique({ where: { id } })
   if (!project) {

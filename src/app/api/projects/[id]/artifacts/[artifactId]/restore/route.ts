@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 import { Prisma } from '@/generated/prisma/client'
 
 type RouteParams = { params: Promise<{ id: string; artifactId: string }> }
@@ -12,16 +12,9 @@ type RouteParams = { params: Promise<{ id: string; artifactId: string }> }
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, artifactId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const existing = await prisma.artifact.findUnique({ where: { id: artifactId } })
   if (!existing || existing.project_id !== id) {

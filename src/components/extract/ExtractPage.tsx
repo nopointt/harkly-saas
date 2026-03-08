@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -220,8 +222,17 @@ export default function ExtractPage({ projectId, corpusFinalized, projectTitle }
   const [activeTab, setActiveTab] = useState<"all" | ExtractionType>("all");
   const [annotatingId, setAnnotatingId] = useState<string | null>(null);
   const [annotationText, setAnnotationText] = useState("");
+  const [includedCount, setIncludedCount] = useState(0);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevStatusRef = useRef<ExtractionStatus>("NOT_STARTED");
+
+  const fetchIncludedCount = useCallback(async () => {
+    const res = await fetch(`/api/projects/${projectId}/sources`);
+    if (res.ok) {
+      const data = (await res.json()) as { stats: { included: number } };
+      setIncludedCount(data.stats?.included ?? 0);
+    }
+  }, [projectId]);
 
   const fetchExtractions = useCallback(async () => {
     const params = activeTab !== "all" ? `?type=${activeTab}` : "";
@@ -249,7 +260,8 @@ export default function ExtractPage({ projectId, corpusFinalized, projectTitle }
   useEffect(() => {
     fetchStatus();
     fetchExtractions();
-  }, [fetchStatus, fetchExtractions]);
+    fetchIncludedCount();
+  }, [fetchStatus, fetchExtractions, fetchIncludedCount]);
 
   // Re-fetch extractions when tab changes
   useEffect(() => {
@@ -279,42 +291,64 @@ export default function ExtractPage({ projectId, corpusFinalized, projectTitle }
 
   const handleRunExtraction = async () => {
     setStatus("RUNNING");
-    await fetch(`/api/projects/${projectId}/extraction/run`, { method: "POST" });
-    fetchStatus();
+    try {
+      await fetch(`/api/projects/${projectId}/extraction/run`, { method: "POST" });
+      toast.success('Extraction started. This may take a few minutes.');
+      fetchStatus();
+    } catch {
+      toast.error('Failed to run extraction');
+      setStatus("NOT_STARTED");
+    }
   };
 
   const handleVerify = async (extractionId: string) => {
-    await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ verified: true }),
-    });
-    fetchExtractions();
+    try {
+      await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verified: true }),
+      });
+      fetchExtractions();
+    } catch {
+      toast.error('Failed to save changes');
+    }
   };
 
   const handleReject = async (extractionId: string) => {
-    await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rejected: true }),
-    });
-    fetchExtractions();
+    try {
+      await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rejected: true }),
+      });
+      fetchExtractions();
+    } catch {
+      toast.error('Failed to save changes');
+    }
   };
 
   const handleAnnotate = async (extractionId: string) => {
-    await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ annotation: annotationText }),
-    });
-    setAnnotatingId(null);
-    setAnnotationText("");
-    fetchExtractions();
+    try {
+      await fetch(`/api/projects/${projectId}/extractions/${extractionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ annotation: annotationText }),
+      });
+      setAnnotatingId(null);
+      setAnnotationText("");
+      fetchExtractions();
+    } catch {
+      toast.error('Failed to save changes');
+    }
   };
 
   const handleDetectContradictions = async () => {
-    await fetch(`/api/projects/${projectId}/extraction/detect-contradictions`, { method: "POST" });
-    fetchExtractions();
+    try {
+      await fetch(`/api/projects/${projectId}/extraction/detect-contradictions`, { method: "POST" });
+      fetchExtractions();
+    } catch {
+      toast.error('Failed to generate artifact');
+    }
   };
 
   const handleAnnotateOpen = (id: string) => {
@@ -344,12 +378,16 @@ export default function ExtractPage({ projectId, corpusFinalized, projectTitle }
           {!corpusFinalized && (
             <div className="flex items-center gap-2">
               <Button disabled>Run extraction</Button>
-              <span className="text-xs text-gray-400">Finalize corpus first</span>
+              <Link href={`/app/projects/${projectId}/corpus`} className="text-xs text-gray-400 hover:text-gray-600 hover:underline">
+                Finalize corpus first
+              </Link>
             </div>
           )}
 
           {corpusFinalized && status === "NOT_STARTED" && (
-            <Button onClick={handleRunExtraction}>Run extraction</Button>
+            <Button onClick={handleRunExtraction} disabled={includedCount === 0}>
+              {includedCount === 0 ? 'No included documents' : 'Run extraction'}
+            </Button>
           )}
 
           {status === "RUNNING" && (
@@ -415,7 +453,11 @@ export default function ExtractPage({ projectId, corpusFinalized, projectTitle }
             {extractions.length === 0 && status !== "RUNNING" ? (
               <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400">
                 {!corpusFinalized ? (
-                  <p className="text-sm">Finalize your corpus first, then run extraction.</p>
+                  <p className="text-sm">
+                    <Link href={`/app/projects/${projectId}/corpus`} className="text-gray-600 hover:text-gray-900 hover:underline">
+                      Finalize your corpus
+                    </Link> first, then run extraction.
+                  </p>
                 ) : status === "NOT_STARTED" ? (
                   <p className="text-sm">Click &apos;Run extraction&apos; to analyze your corpus documents.</p>
                 ) : (

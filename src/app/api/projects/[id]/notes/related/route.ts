@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 
 // ---------------------------------------------------------------------------
 // Keyword overlap scoring — shared tokens longer than 3 chars / min token set
@@ -25,16 +25,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
+
   const contextText = request.nextUrl.searchParams.get('context_text')
 
   if (!contextText || contextText.trim() === '') {
@@ -45,7 +39,7 @@ export async function GET(
   }
 
   const allNotes = await prisma.note.findMany({
-    where: { project_id: id, user_id: session.user.id },
+    where: { project_id: id, user_id: auth.userId },
   })
 
   const scored = allNotes

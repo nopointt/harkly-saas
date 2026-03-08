@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { verifyProjectAuth } from '@/lib/api-auth';
 
 const VALID_STATUSES = ["PENDING", "INCLUDED", "EXCLUDED", "MAYBE", "FLAGGED"];
 
@@ -8,16 +8,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { id } = await params;
+  const auth = await verifyProjectAuth(id);
+  if (!auth.ok) return auth.response;
 
   const body = (await request.json()) as {
     document_ids: string[];
@@ -31,20 +24,25 @@ export async function POST(
     );
   }
 
-  const result = await prisma.document.updateMany({
-    where: {
-      id: { in: body.document_ids },
-      project_id: id,
-    },
-    data: {
-      screening_status: body.screening_status as
-        | "PENDING"
-        | "INCLUDED"
-        | "EXCLUDED"
-        | "MAYBE"
-        | "FLAGGED",
-    },
-  });
+  try {
+    const result = await prisma.document.updateMany({
+      where: {
+        id: { in: body.document_ids },
+        project_id: id,
+      },
+      data: {
+        screening_status: body.screening_status as
+          | "PENDING"
+          | "INCLUDED"
+          | "EXCLUDED"
+          | "MAYBE"
+          | "FLAGGED",
+      },
+    });
 
-  return NextResponse.json({ updated: result.count });
+    return NextResponse.json({ updated: result.count });
+  } catch (err) {
+    console.error('[documents/batch-screen] DB error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

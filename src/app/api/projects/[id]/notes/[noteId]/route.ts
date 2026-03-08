@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 
 // ---------------------------------------------------------------------------
 // PATCH /api/projects/[id]/notes/[noteId]
@@ -12,23 +12,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, noteId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const existing = await prisma.note.findUnique({ where: { id: noteId } })
   if (!existing || existing.project_id !== id) {
     return NextResponse.json({ error: 'Note not found' }, { status: 404 })
   }
 
-  if (existing.user_id !== session.user.id) {
+  if (existing.user_id !== auth.userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -93,23 +86,16 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, noteId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const existing = await prisma.note.findUnique({ where: { id: noteId } })
   if (!existing || existing.project_id !== id) {
     return NextResponse.json({ error: 'Note not found' }, { status: 404 })
   }
 
-  if (existing.user_id !== session.user.id) {
+  if (existing.user_id !== auth.userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

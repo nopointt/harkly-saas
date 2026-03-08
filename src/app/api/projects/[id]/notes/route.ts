@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 
 // ---------------------------------------------------------------------------
 // GET /api/projects/[id]/notes
@@ -12,16 +12,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
+
   const { searchParams } = request.nextUrl
   const search = searchParams.get('search') ?? undefined
   const tag = searchParams.get('tag') ?? undefined
@@ -29,7 +23,7 @@ export async function GET(
   const notes = await prisma.note.findMany({
     where: {
       project_id: id,
-      user_id: session.user.id,
+      user_id: auth.userId,
       ...(search
         ? { content: { contains: search, mode: 'insensitive' } }
         : {}),
@@ -51,16 +45,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   let body: unknown
   try {
@@ -89,15 +76,20 @@ export async function POST(
       ? (linked_doc_ids as string[])
       : []
 
-  const note = await prisma.note.create({
-    data: {
-      project_id: id,
-      user_id: session.user.id,
-      content,
-      tags: resolvedTags,
-      linked_doc_ids: resolvedLinkedDocIds,
-    },
-  })
+  try {
+    const note = await prisma.note.create({
+      data: {
+        project_id: id,
+        user_id: auth.userId,
+        content,
+        tags: resolvedTags,
+        linked_doc_ids: resolvedLinkedDocIds,
+      },
+    })
 
-  return NextResponse.json({ note }, { status: 201 })
+    return NextResponse.json({ note }, { status: 201 })
+  } catch (err) {
+    console.error('[notes] DB error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

@@ -23,7 +23,7 @@ export function FinalizationModal({ includedCount, pendingCount, onConfirm, onCa
 
         {pendingCount > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-700">
-            ⚠ {pendingCount} unreviewed document{pendingCount !== 1 ? "s" : ""} will not be extracted.
+            ⚠ {pendingCount} unreviewed document{pendingCount !== 1 ? "s" : ""} will <strong>NOT</strong> be extracted. Only <strong>{includedCount}</strong> included document{includedCount !== 1 ? "s" : ""} will be analyzed.
           </div>
         )}
 

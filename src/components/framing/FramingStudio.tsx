@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   FrameType,
   FrameData,
@@ -73,6 +74,7 @@ export function FramingStudio({
       const { suggestion } = await res.json();
       setFrames((prev) => ({ ...prev, [activeTab]: suggestion }));
     } catch {
+      toast.error('Failed to generate artifact');
       setError("AI suggestion unavailable. Fill in the fields manually.");
     } finally {
       setSuggesting(false);
@@ -117,6 +119,7 @@ export function FramingStudio({
         onClose();
       }
     } catch (err) {
+      toast.error('Failed to save changes');
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);

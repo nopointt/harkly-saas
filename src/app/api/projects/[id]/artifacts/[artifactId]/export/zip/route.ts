@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { strToU8, zipSync } from 'fflate'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 import { artifactToMarkdown } from '@/lib/artifacts/export'
 import { ArtifactType, ArtifactContent } from '@/types/artifacts'
 
@@ -13,16 +13,9 @@ type RouteParams = { params: Promise<{ id: string; artifactId: string }> }
 // ---------------------------------------------------------------------------
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const project = await prisma.researchProject.findUnique({ where: { id } })
   if (!project) {

@@ -1,38 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { verifyProjectAuth } from '@/lib/api-auth';
 import { ExtractionType } from "@/generated/prisma/enums";
 
-const MOCK_EXTRACTIONS: { type: ExtractionType; content: string }[] = [
-  { type: "FACT", content: "Guest checkout reduces cart abandonment by up to 45% in controlled studies" },
-  { type: "METRIC", content: "73% of mobile users abandon carts due to complex checkout flows" },
-  { type: "QUOTE", content: "The checkout process felt too complicated and time-consuming" },
-  { type: "THEME", content: "Payment friction" },
-  { type: "FACT", content: "Unexpected shipping costs cited by 55% of abandoning shoppers" },
-  { type: "METRIC", content: "One-click checkout increases conversion by 29% on average" },
-  { type: "QUOTE", content: "I gave up when I saw the total with shipping" },
-  { type: "THEME", content: "Trust and security concerns" },
-  { type: "FACT", content: "Progress indicators reduce perceived checkout effort" },
-  { type: "METRIC", content: "Mobile abandonment is 85% higher compared to desktop" },
-];
+// Feature-flagged — only active when MOCK_EXTRACTIONS=true in .env.local
+const MOCK_EXTRACTIONS: { type: ExtractionType; content: string }[] =
+  process.env.MOCK_EXTRACTIONS === 'true'
+    ? [
+        { type: "FACT", content: "Guest checkout reduces cart abandonment by up to 45% in controlled studies" },
+        { type: "METRIC", content: "73% of mobile users abandon carts due to complex checkout flows" },
+        { type: "QUOTE", content: "The checkout process felt too complicated and time-consuming" },
+        { type: "THEME", content: "Payment friction" },
+        { type: "FACT", content: "Unexpected shipping costs cited by 55% of abandoning shoppers" },
+        { type: "METRIC", content: "One-click checkout increases conversion by 29% on average" },
+        { type: "QUOTE", content: "I gave up when I saw the total with shipping" },
+        { type: "THEME", content: "Trust and security concerns" },
+        { type: "FACT", content: "Progress indicators reduce perceived checkout effort" },
+        { type: "METRIC", content: "Mobile abandonment is 85% higher compared to desktop" },
+      ]
+    : [];
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { id } = await params;
+  const auth = await verifyProjectAuth(id);
+  if (!auth.ok) return auth.response;
 
   const project = await prisma.researchProject.findFirst({
-    where: { id, user_id: session.user.id },
+    where: { id },
   });
 
   if (!project) {

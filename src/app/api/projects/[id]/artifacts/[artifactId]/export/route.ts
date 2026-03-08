@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { verifyProjectAuth } from '@/lib/api-auth'
 import { artifactToMarkdown } from '@/lib/artifacts/export'
 import { ArtifactType, ArtifactContent } from '@/types/artifacts'
 
@@ -14,16 +14,9 @@ const VALID_FORMATS = new Set(['markdown', 'pdf'])
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id, artifactId } = await params
+  const auth = await verifyProjectAuth(id)
+  if (!auth.ok) return auth.response
 
   const format = request.nextUrl.searchParams.get('format') ?? 'markdown'
   if (!VALID_FORMATS.has(format)) {
