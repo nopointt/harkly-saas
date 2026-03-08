@@ -645,6 +645,68 @@ async function main() {
     }
   }
 
+  // ── Seed Notes for "Checkout abandonment analysis" ─────────────────────────
+  if (checkoutProject) {
+    const existingNotes = await prisma.note.count({
+      where: { project_id: checkoutProject.id },
+    });
+
+    if (existingNotes === 0) {
+      // Grab the first included document id for linked_doc_ids on note 1
+      const firstDoc = await prisma.document.findFirst({
+        where: { project_id: checkoutProject.id, screening_status: "INCLUDED" },
+        orderBy: { created_at: "asc" },
+      });
+
+      const notesData = [
+        {
+          content:
+            "Users seem more comfortable with saved card options — worth investigating if 1-click checkout matters here",
+          tags: ["hypothesis", "payment"],
+          linked_doc_ids: firstDoc ? [firstDoc.id] : [],
+        },
+        {
+          content:
+            "Trust signals are consistently mentioned across 4 different sources — this is a strong theme",
+          tags: ["trust", "strong-signal"],
+          linked_doc_ids: [],
+        },
+        {
+          content:
+            "Contradiction between Report A (73% abandon at payment) and Blog B (52%) — need to check methodology",
+          tags: ["contradiction", "metrics"],
+          linked_doc_ids: [],
+        },
+        {
+          content:
+            "Mobile checkout friction much higher — might be separate PICO needed",
+          tags: ["mobile", "scoping"],
+          linked_doc_ids: [],
+        },
+        {
+          content:
+            "Key insight: the problem isn't form length, it's unexpected costs at last step",
+          tags: ["insight", "priority"],
+          linked_doc_ids: [],
+        },
+      ];
+
+      for (const noteData of notesData) {
+        await prisma.note.create({
+          data: {
+            project_id: checkoutProject.id,
+            user_id: user.id,
+            content: noteData.content,
+            tags: noteData.tags,
+            linked_doc_ids: noteData.linked_doc_ids,
+          },
+        });
+      }
+
+      console.log(`Seeded 5 notes for "Checkout abandonment analysis"`);
+    }
+  }
+
   console.log(`Seed complete — workspace: ${workspace.id}, user: ${user.id}`);
 }
 
