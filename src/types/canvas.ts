@@ -19,6 +19,8 @@ export interface CanvasFrame {
   height: number;
   zIndex: number;
   minimized: boolean;
+  /** Which ResearchProject this frame is bound to */
+  projectId?: string;
 }
 
 export interface CanvasViewport {

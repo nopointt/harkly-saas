@@ -75,8 +75,11 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="mt-20 text-sm text-zinc-600">
-        © {new Date().getFullYear()} Harkly. All rights reserved.
+      <footer className="mt-20 text-sm text-zinc-600 flex items-center gap-6">
+        <span>© {new Date().getFullYear()} Harkly. All rights reserved.</span>
+        <a href="/auth/login" className="text-zinc-700 hover:text-zinc-400 transition-colors">
+          Dev →
+        </a>
       </footer>
     </div>
   )

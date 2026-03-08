@@ -5,6 +5,7 @@ import { useDrag, useWheel } from "@use-gesture/react";
 import { useCanvasState } from "./useCanvasState";
 import { CanvasGrid } from "./CanvasGrid";
 import { CanvasFrame } from "./CanvasFrame";
+import { FrameContentRouter } from "./FrameContentRouter";
 import { CANVAS_DEFAULTS } from "@/types/canvas";
 
 /**
@@ -72,7 +73,9 @@ export function Canvas() {
       >
         {frames.map((frame) => (
           <div key={frame.id} data-canvas-frame>
-            <CanvasFrame frame={frame} />
+            <CanvasFrame frame={frame}>
+              <FrameContentRouter frame={frame} />
+            </CanvasFrame>
           </div>
         ))}
       </div>
