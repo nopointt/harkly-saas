@@ -1,0 +1,5 @@
+[Sun Mar  8 18:12:10     2026] G3 SESSION OPEN — TASK-HARKLY-001-E0-SCAFFOLD
+
+Coach: Claude (Sonnet 4.6)
+Player E0: Qwen CLI
+Player E0.5: Claude (parallel)
