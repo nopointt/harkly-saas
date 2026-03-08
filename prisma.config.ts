@@ -8,6 +8,6 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["DATABASE_URL"]!,
-    directUrl: process.env["DIRECT_URL"],
+    // Note: for migrations use DIRECT_URL — run: DIRECT_URL=... bunx prisma migrate deploy
   },
 });
