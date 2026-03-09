@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-white: #FFF8E7;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
@@ -121,11 +122,19 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    background: #080950;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: #080950;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -150,6 +159,16 @@
   syntax: "<color>";
   initial-value: transparent;
   inherits: false;
+}
+
+/* Drag strip — hidden scrollbar */
+.drag-strip {
+  overflow-x: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.drag-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .harkly-bg {
@@ -257,6 +276,8 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  height: 100%;
+  overflow: clip; /* не сплющивает preserve-3d, в отличие от overflow:hidden */
 }
 
 .hc-wrap {
@@ -287,9 +308,9 @@
   width: 100%;
   height: 100%;
   mix-blend-mode: overlay;
-  background: radial-gradient(ellipse at center, #3050d0 0%, #0d1080 100%);
-  opacity: 0.7;
-  animation: hc-filter 8s infinite;
+  background: radial-gradient(ellipse at center, #1e3eb0 0%, #0d0e65 100%);
+  opacity: 0.65;
+  animation: hc-hue-pulse 8s ease-in-out infinite;
 }
 
 .hc-cube-box {
@@ -340,7 +361,7 @@
   letter-spacing: -0.04em;
   font-size: calc(6em + (190px / 10) * 0.7);
   padding-top: 20px;
-  color: #fff;
+  color: #FFF8E7;
   margin: 0;
 }
 
@@ -369,6 +390,14 @@
 @keyframes hc-scroll-back  { 100% { margin-left: -54870px; } }
 @keyframes hc-scroll-right { 100% { margin-left: -55740px; } }
 
+.hc-boy-img {
+  animation: hc-boy-blur 200s linear infinite;
+}
+@keyframes hc-boy-blur {
+  0%   { filter: blur(0px); }
+  100% { filter: blur(3px); }
+}
+
 @keyframes hc-zoom {
   0%   { transform: scale(1); }
   100% { transform: scale(2.5); }
@@ -379,9 +408,38 @@
   100% { filter: brightness(0.8) contrast(1.3); }
 }
 
-@keyframes hc-filter {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50%       { filter: hue-rotate(100deg); }
+@keyframes hc-hue-pulse {
+  0%, 100% { opacity: 0.65; }
+  50%       { opacity: 0.45; }
+}
+
+/* =====================================================
+   Hero Parallax Layers + Fade
+   ===================================================== */
+
+/* Extended-height wrappers — give room for yPercent movement */
+.hero-px-img {
+  position: absolute;
+  top: -15%;
+  left: 0;
+  width: 100%;
+  height: 130%;
+  pointer-events: none;
+}
+
+/* Bottom fade — 10% strip, transparent top → solid bottom */
+.hero-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 10%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(13, 14, 101, 1) 100%
+  );
 }
 
 /* =====================================================
@@ -394,7 +452,7 @@
   --theme-primary-500: #3758f9;
   --theme-primary-600: #2237ee;
 
-  --theme-title-50: #ffffffcc;
+  --theme-title-50: #FFF8E7cc;
   --theme-text-50: #9ca3af;
   --theme-text-300: #e5e7eb;
 
@@ -408,7 +466,7 @@
 
   --theme-button-primary-background: #3758f9;
   --theme-button-primary-hover-background: #2237ee;
-  --theme-button-primary-text: #ffffff;
+  --theme-button-primary-text: #FFF8E7;
   --theme-button-primary-focus-ring: rgba(55, 88, 249, 0.2);
 
   --theme-button-outline-background: #111827;
@@ -416,7 +474,7 @@
   --theme-button-outline-text: #e5e7eb;
   --theme-button-outline-hover-text: #f3f4f6;
 
-  --theme-input-background: #ffffff0d;
+  --theme-input-background: #FFF8E70d;
   --theme-input-placeholder-text: #6b7280;
   --theme-input-primary-focus-border: #91aeff;
 
@@ -424,7 +482,7 @@
   --theme-badge-primary-text: #5e84fc;
 
   --theme-card-background-100: #1e2634;
-  --theme-card-background-200: #ffffff08;
+  --theme-card-background-200: #FFF8E708;
   --theme-card-background-300: #111827;
 }
 

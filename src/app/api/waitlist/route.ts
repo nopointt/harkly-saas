@@ -1,45 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
+function isValidTelegram(handle: string): boolean {
+  return /^@?[a-zA-Z0-9_]{5,32}$/.test(handle)
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email } = body
+    const { telegram, role } = body
 
-    if (!email || typeof email !== 'string') {
+    if (!telegram || typeof telegram !== 'string') {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Telegram handle is required' },
         { status: 400 }
       )
     }
 
-    const trimmedEmail = email.trim().toLowerCase()
+    const normalized = telegram.trim().startsWith('@') ? telegram.trim() : `@${telegram.trim()}`
 
-    if (!isValidEmail(trimmedEmail)) {
+    if (!isValidTelegram(normalized)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Invalid Telegram handle' },
         { status: 400 }
       )
     }
 
     const existing = await prisma.waitlistEntry.findUnique({
-      where: { email: trimmedEmail }
+      where: { telegram: normalized }
     })
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'Already registered' },
         { status: 409 }
       )
     }
 
     await prisma.waitlistEntry.create({
-      data: { email: trimmedEmail }
+      data: {
+        telegram: normalized,
+        role: role && typeof role === 'string' ? role.trim() : null,
+      }
     })
 
     return NextResponse.json({ success: true }, { status: 201 })

@@ -270,7 +270,8 @@ model Note {
 
 model WaitlistEntry {
   id         String   @id @default(uuid())
-  email      String   @unique
+  telegram   String   @unique
+  role       String?
   created_at DateTime @default(now())
 
   @@map("waitlist_entries")
