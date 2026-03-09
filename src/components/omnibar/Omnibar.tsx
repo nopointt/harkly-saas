@@ -72,7 +72,7 @@ export function Omnibar({ workspaceId }: OmnibarProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <kbd className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">ESC</kbd>
+            <kbd className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">ESC</kbd>
           </div>
           {query.trim() && (
             <div className="px-4 py-3">
@@ -85,7 +85,7 @@ export function Omnibar({ workspaceId }: OmnibarProps) {
                   <p className="text-sm font-medium text-gray-900">Start new research</p>
                   <p className="text-xs text-gray-400 truncate">&ldquo;{query}&rdquo;</p>
                 </div>
-                <span className="ml-auto text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">↵ Enter</span>
+                <span className="ml-auto text-xs text-gray-400 opacity-0 group-hover:opacity-100">↵ Enter</span>
               </button>
             </div>
           )}

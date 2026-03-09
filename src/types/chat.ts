@@ -2,26 +2,28 @@
 
 export type ChatPanelPosition = "left" | "center" | "right";
 
+export type ChatPanelSize = "max" | "half" | "hidden";
+
 export interface ChatState {
   position: ChatPanelPosition;
-  collapsed: boolean;
+  size: ChatPanelSize;
   width: number;
 }
 
 export type ChatStore = {
   position: ChatPanelPosition;
-  collapsed: boolean;
+  size: ChatPanelSize;
   width: number;
 
   setPosition: (position: ChatPanelPosition) => void;
-  setCollapsed: (collapsed: boolean) => void;
-  toggleCollapsed: () => void;
+  setSize: (size: ChatPanelSize) => void;
+  cycleSize: () => void;
   setWidth: (width: number) => void;
 };
 
 export const CHAT_DEFAULTS = {
-  WIDTH: 360,
-  MIN_WIDTH: 280,
-  MAX_WIDTH: 600,
-  DEFAULT_POSITION: "right" as ChatPanelPosition,
+  WIDTH_CENTER: 660,
+  WIDTH_EDGE: 410,
+  DEFAULT_POSITION: "center" as ChatPanelPosition,
+  DEFAULT_SIZE: "max" as ChatPanelSize,
 } as const;

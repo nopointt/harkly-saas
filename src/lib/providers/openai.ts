@@ -38,7 +38,6 @@ export async function streamOpenAIChat(
         max_tokens: config.maxTokens ?? 4096,
         temperature: config.temperature ?? 0.7,
         stream: true,
-        stream_options: { include_usage: true },
       }),
     });
   } catch (err) {

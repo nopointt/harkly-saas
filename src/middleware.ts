@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/auth/register')
   ) {
     if (session) {
-      return NextResponse.redirect(new URL('/app/dashboard', request.url))
+      return NextResponse.redirect(new URL('/app/main', request.url))
     }
   }
 

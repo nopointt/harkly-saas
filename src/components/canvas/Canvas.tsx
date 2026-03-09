@@ -6,6 +6,7 @@ import { useCanvasState } from "./useCanvasState";
 import { CanvasGrid } from "./CanvasGrid";
 import { CanvasFrame } from "./CanvasFrame";
 import { FrameContentRouter } from "./FrameContentRouter";
+import { FloorBadge } from "./FloorBadge";
 import { CANVAS_DEFAULTS } from "@/types/canvas";
 
 /**
@@ -80,8 +81,11 @@ export function Canvas() {
         ))}
       </div>
 
+      {/* Floor badge — floor number, coordinates, avatar */}
+      <FloorBadge />
+
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 left-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded select-none pointer-events-none">
+      <div className="absolute bottom-4 left-4 text-xs text-gray-400 select-none pointer-events-none">
         {Math.round(viewport.zoom * 100)}%
       </div>
     </div>

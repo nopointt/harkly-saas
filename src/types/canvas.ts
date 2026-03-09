@@ -54,9 +54,9 @@ export type CanvasStore = {
 
 /** Default canvas constants */
 export const CANVAS_DEFAULTS = {
-  GRID_SIZE: 40,
-  BACKGROUND_COLOR: "#faf8f0",
-  GRID_COLOR: "rgba(0,0,0,0.07)",
+  GRID_SIZE: 100,
+  BACKGROUND_COLOR: "#FFF8E7",
+  GRID_COLOR: "rgba(0,0,0,0.06)",
   MIN_ZOOM: 0.2,
   MAX_ZOOM: 2.5,
   DEFAULT_FRAME_WIDTH: 600,

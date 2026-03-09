@@ -6,10 +6,11 @@ import { AgentConfig, AgentMessage, AgentSession, AgentStatus, AgentStore } from
 
 const DEFAULT_AGENT: AgentConfig = {
   id: "default",
-  name: "Assistant",
-  provider: "anthropic",
-  model: "claude-sonnet-4-6",
-  apiKey: "",
+  name: "Llama 3.3",
+  provider: "custom",
+  model: "meta/llama-3.3-70b-instruct",
+  apiKey: process.env.NEXT_PUBLIC_NVIDIA_NIM_KEY ?? "",
+  baseUrl: "https://integrate.api.nvidia.com/v1",
   systemPrompt: "You are a research assistant helping with desk research and analysis.",
   temperature: 0.7,
   maxTokens: 4096,
@@ -107,8 +108,8 @@ export const useAgents = create<AgentStore>()(
     }),
     {
       name: "harkly-agents",
+      version: 2, // bump to reset persisted state with new default provider
       storage: createJSONStorage(() => localStorage),
-      // Don't persist session messages — only persist configs
       partialize: (state) => ({
         configs: state.configs,
         activeAgentId: state.activeAgentId,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 // ─── Shared ──────────────────────────────────────────────────────────────────
@@ -35,8 +35,8 @@ function PrimaryBtn({
       disabled={disabled}
       className={cn(
         'relative flex h-11 w-full items-center justify-center px-6',
-        'before:absolute before:inset-0 before:rounded-full before:bg-indigo-600',
-        'before:transition before:duration-300 hover:before:scale-105 active:duration-75 active:before:scale-95',
+        'before:absolute before:inset-0 before:rounded-full before:bg-indigo-500',
+        'before:transition before:duration-300 hover:before:scale-105 hover:before:bg-indigo-400 active:duration-75 active:before:scale-95',
         'disabled:pointer-events-none disabled:opacity-60 sm:w-max',
         className,
       )}
@@ -61,13 +61,13 @@ function OutlineBtn({
       onClick={onClick}
       className={cn(
         'relative flex h-11 w-full items-center justify-center px-6',
-        'before:absolute before:inset-0 before:rounded-full before:border before:border-gray-300',
-        'before:bg-gray-50 before:transition before:duration-300 hover:before:scale-105 active:before:scale-95',
+        'before:absolute before:inset-0 before:rounded-full before:border before:border-white/20',
+        'before:bg-white/5 before:transition before:duration-300 hover:before:scale-105 hover:before:bg-white/10 active:before:scale-95',
         'sm:w-max',
         className,
       )}
     >
-      <span className="relative text-base font-semibold text-gray-700">{children}</span>
+      <span className="relative text-base font-semibold text-white/80">{children}</span>
     </button>
   )
 }
@@ -76,10 +76,56 @@ function GradientBlobs() {
   return (
     <div
       aria-hidden="true"
-      className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-40 pointer-events-none"
+      className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-25 pointer-events-none"
     >
-      <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-purple-400 dark:from-blue-700" />
-      <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-300 dark:to-indigo-600" />
+      <div className="blur-[106px] h-56 bg-gradient-to-br from-indigo-400 to-violet-500" />
+      <div className="blur-[106px] h-32 bg-gradient-to-r from-blue-400 to-indigo-300" />
+    </div>
+  )
+}
+
+// ─── Hero Cube ───────────────────────────────────────────────────────────────
+
+function HeroCube() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const adjust = () => {
+      if (!wrapRef.current) return
+      const scale = window.innerWidth < 1000 ? (window.innerWidth / 1000) * 0.85 : 1
+      wrapRef.current.style.transform = `scale(${scale})`
+      wrapRef.current.style.transformOrigin = 'top center'
+    }
+    adjust()
+    window.addEventListener('resize', adjust)
+    return () => window.removeEventListener('resize', adjust)
+  }, [])
+
+  const phrase = 'Рынок исследований меняется — мы помогаем успеть · '
+  const text = Array(25).fill(phrase).join('')
+
+  const cubeInner = (reflect?: boolean) => (
+    <div className={reflect ? 'hc-reflect' : 'hc-cube-box'}>
+      <div className="hc-cube">
+        <div className="hc-face hc-top" />
+        <div className="hc-face hc-bottom" />
+        <div className="hc-face hc-left"><p className="hc-text">{text}</p></div>
+        <div className="hc-face hc-right"><p className="hc-text">{text}</p></div>
+        <div className="hc-face hc-front" />
+        <div className="hc-face hc-back"><p className="hc-text">{text}</p></div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="hc-outer">
+      <div ref={wrapRef} className="hc-wrap">
+        <div className="hc-inner">
+          <div className="hc-hue" />
+          {cubeInner()}
+          {cubeInner(true)}
+        </div>
+      </div>
     </div>
   )
 }
@@ -89,15 +135,11 @@ function GradientBlobs() {
 function Nav() {
   return (
     <header>
-      <nav className="absolute z-10 w-full border-b border-black/5">
+      <nav className="absolute z-10 w-full border-b border-white/10">
         <Container>
           <div className="flex items-center justify-between py-4">
-            <a href="/" className="flex items-center space-x-2">
-              <div aria-hidden="true" className="flex space-x-1">
-                <div className="size-4 rounded-full bg-gray-900" />
-                <div className="h-6 w-2 bg-indigo-600" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900" style={urbanist}>Harkly</span>
+            <a href="/">
+              <span className="text-2xl font-bold tracking-widest text-white" style={{ fontFamily: 'var(--font-inter, sans-serif)' }}>HARKLY</span>
             </a>
             <PrimaryBtn
               className="h-9 px-4"
@@ -117,21 +159,16 @@ function Nav() {
 function Hero() {
   return (
     <div className="relative" id="home">
-      <GradientBlobs />
+      <div className="pt-20">
+        <HeroCube />
+      </div>
       <Container>
-        <div className="relative pt-36 pb-16">
+        <div className="relative pt-8 pb-16">
           <div className="mx-auto max-w-3xl text-center">
-            <h1
-              className="text-balance font-bold text-5xl text-gray-900 md:text-6xl xl:text-7xl"
-              style={urbanist}
-            >
-              Рынок исследований меняется —{' '}
-              <span className="text-indigo-600">мы помогаем успеть.</span>
-            </h1>
-            <p className="mt-8 text-gray-700 text-lg leading-relaxed">
+            <p className="text-white/60 text-lg leading-relaxed">
               Harkly — AI-платформа для кабинетных исследований.
             </p>
-            <div className="mt-12 flex flex-wrap justify-center gap-y-4 gap-x-6">
+            <div className="mt-10 flex flex-wrap justify-center gap-y-4 gap-x-6">
               <PrimaryBtn
                 onClick={() => document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' })}
               >
@@ -187,30 +224,30 @@ const quotes = [
 
 function SocialProof() {
   return (
-    <div className="text-gray-600" id="reviews">
+    <div className="text-white/60" id="reviews">
       <Container>
         <div className="mb-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-800 md:text-4xl" style={urbanist}>
+          <h2 className="text-2xl font-bold text-white md:text-4xl" style={urbanist}>
             Проблема
           </h2>
-          <p className="mt-3 text-gray-500">На основе исследования 200+ источников</p>
+          <p className="mt-3 text-white/40">На основе исследования 200+ источников</p>
         </div>
         <div className="md:columns-2 lg:columns-3 gap-8 space-y-8">
           {quotes.map((q, i) => (
             <div
               key={i}
-              className="aspect-auto p-8 border border-gray-100 rounded-3xl bg-white shadow-2xl shadow-gray-600/10"
+              className="box-gleam aspect-auto p-8 rounded-3xl"
             >
               <div className="flex gap-4 items-start">
-                <div className="size-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                  <span className="text-indigo-600 text-xs font-bold">{q.author[0]}</span>
+                <div className="size-10 rounded-full bg-indigo-900/50 flex items-center justify-center shrink-0">
+                  <span className="text-indigo-300 text-xs font-bold">{q.author[0]}</span>
                 </div>
                 <div>
-                  <h6 className="text-base font-medium text-gray-700">{q.author}</h6>
-                  <p className="text-sm text-gray-400">{q.role}</p>
+                  <h6 className="text-base font-medium text-white/80">{q.author}</h6>
+                  <p className="text-sm text-white/40">{q.role}</p>
                 </div>
               </div>
-              <p className="mt-6 text-gray-600 leading-relaxed">«{q.text}»</p>
+              <p className="mt-6 text-white/60 leading-relaxed">«{q.text}»</p>
             </div>
           ))}
         </div>
@@ -226,18 +263,18 @@ function Problem() {
     <div id="problem">
       <Container>
         <div className="md:w-2/3 lg:w-1/2 mb-12">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-indigo-300">
             <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
           </svg>
-          <h2 className="my-6 text-2xl font-bold text-gray-700 md:text-4xl" style={urbanist}>
+          <h2 className="my-6 text-2xl font-bold text-white md:text-4xl" style={urbanist}>
             У кабинетного исследования нет дома.
           </h2>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-white/60 leading-relaxed">
             Раньше все решения принимались вчера, но в 2026 это уже позавчера. Как только вы задумались над методологией — ваши данные уже нерелевантны.
           </p>
         </div>
 
-        <div className="mt-4 grid divide-x divide-y divide-gray-100 overflow-hidden rounded-3xl border border-gray-100 text-gray-600 sm:grid-cols-3">
+        <div className="mt-4 grid divide-x divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 text-white/60 sm:grid-cols-3">
           {[
             {
               title: 'Инструмента не существует',
@@ -255,18 +292,18 @@ function Problem() {
               stat: 'Только 21% исследователей довольны тем, как демонстрируют влияние своей работы.',
             },
           ].map((item, i) => (
-            <div key={i} className="group relative bg-white transition hover:z-[1] hover:shadow-2xl hover:shadow-gray-600/10">
+            <div key={i} className="group relative bg-white/5 transition hover:z-[1] hover:bg-white/8">
               <div className="relative space-y-6 py-10 p-8">
-                <div className="w-12 h-12 flex rounded-full bg-indigo-50 items-center justify-center">
-                  <span className="text-indigo-600 font-bold text-sm">0{i + 1}</span>
+                <div className="w-12 h-12 flex rounded-full bg-indigo-900/40 items-center justify-center">
+                  <span className="text-indigo-300 font-bold text-sm">0{i + 1}</span>
                 </div>
                 <div className="space-y-2">
-                  <h5 className="text-xl font-semibold text-gray-700 transition group-hover:text-indigo-600">
+                  <h5 className="text-xl font-semibold text-white/80 transition group-hover:text-indigo-300">
                     {item.title}
                   </h5>
-                  <p className="text-gray-600">{item.text}</p>
+                  <p className="text-white/55">{item.text}</p>
                 </div>
-                <p className="text-xs text-gray-400 border-t border-gray-100 pt-4 leading-relaxed transition group-hover:text-indigo-500 group-hover:border-indigo-100">
+                <p className="text-xs text-white/30 border-t border-white/10 pt-4 leading-relaxed transition group-hover:text-indigo-300/60 group-hover:border-indigo-400/20">
                   {item.stat}
                 </p>
               </div>
@@ -285,18 +322,18 @@ function Solution() {
     <div id="features">
       <Container>
         <div className="md:w-2/3 lg:w-1/2 mb-12">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-indigo-300">
             <path fillRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813A3.75 3.75 0 007.466 7.89l.813-2.846A.75.75 0 019 4.5zM18 1.5a.75.75 0 01.728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 010 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 01-1.456 0l-.258-1.036a2.625 2.625 0 00-1.91-1.91l-1.036-.258a.75.75 0 010-1.456l1.036-.258a2.625 2.625 0 001.91-1.91l.258-1.036A.75.75 0 0118 1.5z" clipRule="evenodd" />
           </svg>
-          <h2 className="my-6 text-2xl font-bold text-gray-700 md:text-4xl" style={urbanist}>
+          <h2 className="my-6 text-2xl font-bold text-white md:text-4xl" style={urbanist}>
             Один процесс. От вопроса до артефакта.
           </h2>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-white/60 leading-relaxed">
             Harkly — первая платформа, созданная специально для кабинетного исследования. Для случаев, когда нет пользователей для интервью, дедлайн уже сдвинулся, а стейкхолдер ждёт доказательства, а не слайды.
           </p>
         </div>
 
-        <div className="mt-4 grid divide-x divide-y divide-gray-100 overflow-hidden rounded-3xl border border-gray-100 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid divide-x divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               title: 'Правильный фрейминг с первого раза',
@@ -329,18 +366,15 @@ function Solution() {
               outcome: 'Работает там, где первичное исследование невозможно.',
             },
           ].map((f, i) => (
-            <div key={i} className={cn(
-              'group relative transition hover:z-[1] hover:shadow-2xl hover:shadow-gray-600/10',
-              i === 3 ? 'bg-gray-50 transition duration-300 group-hover:bg-white' : 'bg-white',
-            )}>
+            <div key={i} className="group relative bg-white/5 transition hover:z-[1] hover:bg-white/8">
               <div className="relative space-y-6 py-10 p-8">
                 <div className="space-y-2">
-                  <h5 className="text-xl font-semibold text-gray-700 transition group-hover:text-indigo-600">
+                  <h5 className="text-xl font-semibold text-white/80 transition group-hover:text-indigo-300">
                     {f.title}
                   </h5>
-                  <p className="text-gray-600">{f.text}</p>
+                  <p className="text-white/55">{f.text}</p>
                 </div>
-                <div className="flex items-center justify-between text-indigo-600 group-hover:text-indigo-500">
+                <div className="flex items-center justify-between text-indigo-300/80 group-hover:text-indigo-300">
                   <span className="text-sm font-medium">{f.outcome}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 -translate-x-4 opacity-0 transition duration-300 group-hover:translate-x-0 group-hover:opacity-100">
                     <path fillRule="evenodd" d="M12.97 3.97a.75.75 0 011.06 0l7.5 7.5a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 11-1.06-1.06l6.22-6.22H3a.75.75 0 010-1.5h16.19l-6.22-6.22a.75.75 0 010-1.06z" clipRule="evenodd" />
@@ -373,7 +407,7 @@ const spine = [
   {
     step: '03',
     label: 'Ingestion',
-    title: 'Загрузка и тriage корпуса',
+    title: 'Загрузка и triage корпуса',
     desc: 'PDF, ссылки, базы знаний — Harkly ранжирует по семантической близости и удаляет дубли.',
   },
   {
@@ -403,18 +437,18 @@ function HowItWorks() {
         <div className="space-y-6 md:flex flex-row-reverse md:gap-12 md:space-y-0 lg:gap-20 lg:items-start">
           {/* Spine visual */}
           <div className="md:w-5/12 lg:w-1/2">
-            <div className="rounded-3xl border border-gray-100 bg-white shadow-2xl shadow-gray-600/10 p-8 space-y-1">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-1">
               {spine.map((s, i) => (
-                <div key={i} className="flex gap-4 items-start group cursor-default py-3 border-b border-gray-50 last:border-0">
-                  <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition">
-                    <span className="text-indigo-600 text-xs font-bold">{s.step}</span>
+                <div key={i} className="flex gap-4 items-start group cursor-default py-3 border-b border-white/5 last:border-0">
+                  <div className="w-10 h-10 rounded-full bg-indigo-900/40 flex items-center justify-center shrink-0 group-hover:bg-indigo-800/50 transition">
+                    <span className="text-indigo-300 text-xs font-bold">{s.step}</span>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-widest text-indigo-400">{s.label}</span>
+                      <span className="text-xs font-semibold uppercase tracking-widest text-indigo-300/60">{s.label}</span>
                     </div>
-                    <h6 className="font-semibold text-gray-700 group-hover:text-indigo-600 transition">{s.title}</h6>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{s.desc}</p>
+                    <h6 className="font-semibold text-white/70 group-hover:text-indigo-300 transition">{s.title}</h6>
+                    <p className="text-sm text-white/40 mt-0.5 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -423,31 +457,31 @@ function HowItWorks() {
 
           {/* Text */}
           <div className="md:w-7/12 lg:w-1/2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-sky-500">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-sky-400">
               <path fillRule="evenodd" d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z" clipRule="evenodd" />
               <path fillRule="evenodd" d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z" clipRule="evenodd" />
             </svg>
-            <h2 className="my-6 text-3xl font-bold text-gray-900 md:text-4xl" style={urbanist}>
+            <h2 className="my-6 text-3xl font-bold text-white md:text-4xl" style={urbanist}>
               Шесть этапов. Один пайплайн.
             </h2>
-            <p className="text-gray-600 leading-relaxed mb-8">
+            <p className="text-white/60 leading-relaxed mb-8">
               Harkly spine — это полный цикл кабинетного исследования в одном месте. От черновой формулировки вопроса до готового артефакта, где каждый вывод трассируется до источника.
             </p>
-            <div className="divide-y space-y-4 divide-gray-100">
+            <div className="divide-y space-y-4 divide-white/10">
               {[
                 { label: 'Работает без первичных данных', desc: 'Для B2B, regulated industries, ограниченных бюджетов.' },
                 { label: 'Артефакты вместо слайдов', desc: 'Evidence map, empathy map, fact pack — готовы за одну сессию.' },
                 { label: 'Исследование приходит до совещания', desc: 'Не после. Данные влияют на решение, а не подтверждают его.' },
               ].map((item, i) => (
                 <div key={i} className={cn('flex gap-4 md:items-center', i > 0 && 'pt-4')}>
-                  <div className="w-12 h-12 flex rounded-full bg-indigo-50 items-center justify-center shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-indigo-600">
+                  <div className="w-12 h-12 flex rounded-full bg-indigo-900/40 items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-indigo-300">
                       <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-gray-700">{item.label}</h3>
-                    <p className="text-gray-500">{item.desc}</p>
+                    <h3 className="font-semibold text-lg text-white/80">{item.label}</h3>
+                    <p className="text-white/50">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -470,13 +504,13 @@ const stats = [
 
 function Stats() {
   return (
-    <div className="border-y border-gray-100 py-16 bg-gray-50">
+    <div className="border-y border-white/10 py-16">
       <Container>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s, i) => (
             <div key={i} className="text-center">
-              <h3 className="text-4xl font-bold text-gray-900" style={urbanist}>{s.value}</h3>
-              <p className="mt-2 text-sm text-gray-500 leading-relaxed">{s.label}</p>
+              <h3 className="text-4xl font-bold text-white" style={urbanist}>{s.value}</h3>
+              <p className="mt-2 text-sm text-white/40 leading-relaxed">{s.label}</p>
             </div>
           ))}
         </div>
@@ -526,22 +560,22 @@ function CtaSection() {
       <GradientBlobs />
       <Container>
         <div className="relative mx-auto space-y-6 md:w-8/12 lg:w-7/12 text-center">
-          <h1 className="text-4xl font-bold text-gray-800 md:text-5xl" style={urbanist}>
+          <h1 className="text-4xl font-bold text-white md:text-5xl" style={urbanist}>
             Исследуйте, творите, меняйте.
             <br />
-            <span className="text-gray-500">Всё остальное мы возьмём на себя.</span>
+            <span className="text-white/40">Всё остальное мы возьмём на себя.</span>
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-white/55">
             Harkly в закрытой бете. Пробуйте — и присоединяйтесь к закрытому сообществу. Давайте строить вместе.
           </p>
 
           {status === 'success' ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 text-green-500">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 text-emerald-400">
                 <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
               </svg>
-              <p className="text-lg font-semibold text-gray-800">Вы в списке!</p>
-              <p className="text-gray-500">Напишем, когда откроем доступ.</p>
+              <p className="text-lg font-semibold text-white">Вы в списке!</p>
+              <p className="text-white/50">Напишем, когда откроем доступ.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-wrap justify-center gap-4 mt-4">
@@ -553,8 +587,8 @@ function CtaSection() {
                 required
                 disabled={status === 'loading'}
                 className={cn(
-                  'h-11 rounded-full border border-gray-200 bg-white px-5',
-                  'text-gray-700 placeholder:text-gray-400 outline-none shadow-sm',
+                  'h-11 rounded-full border border-white/20 bg-white/10 px-5',
+                  'text-white placeholder:text-white/35 outline-none',
                   'focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20',
                   'transition w-full sm:w-72',
                 )}
@@ -564,27 +598,27 @@ function CtaSection() {
                 onChange={e => setRole(e.target.value)}
                 disabled={status === 'loading'}
                 className={cn(
-                  'h-11 rounded-full border border-gray-200 bg-white px-5 shadow-sm',
+                  'h-11 rounded-full border border-white/20 bg-white/10 px-5',
                   'outline-none focus:border-indigo-400 transition w-full sm:w-auto',
-                  role ? 'text-gray-700' : 'text-gray-400',
+                  role ? 'text-white' : 'text-white/35',
                 )}
               >
-                <option value="" disabled>Роль</option>
-                <option value="ux-researcher">UX Researcher</option>
-                <option value="cx-researcher">CX Researcher</option>
-                <option value="pm">Product Manager</option>
-                <option value="other">Другое</option>
+                <option value="" disabled className="bg-[#0d0e65] text-white/60">Роль</option>
+                <option value="ux-researcher" className="bg-[#0d0e65] text-white">UX Researcher</option>
+                <option value="cx-researcher" className="bg-[#0d0e65] text-white">CX Researcher</option>
+                <option value="pm" className="bg-[#0d0e65] text-white">Product Manager</option>
+                <option value="other" className="bg-[#0d0e65] text-white">Другое</option>
               </select>
               <PrimaryBtn type="submit" disabled={status === 'loading'} className="h-11">
                 {status === 'loading' ? 'Отправка...' : 'Получить доступ →'}
               </PrimaryBtn>
               {status === 'error' && errorMsg && (
-                <p className="w-full text-sm text-red-500 text-center">{errorMsg}</p>
+                <p className="w-full text-sm text-red-400 text-center">{errorMsg}</p>
               )}
             </form>
           )}
 
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-white/30">
             Без карты. Без спама. Бета-пользователи получают 3 месяца бесплатно при запуске.
           </p>
         </div>
@@ -597,18 +631,14 @@ function CtaSection() {
 
 function Footer() {
   return (
-    <footer className="py-16 border-t border-gray-100">
+    <footer className="py-16 border-t border-white/10">
       <Container>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <a href="/" className="flex items-center space-x-2">
-            <div aria-hidden="true" className="flex space-x-1">
-              <div className="size-4 rounded-full bg-gray-900" />
-              <div className="h-6 w-2 bg-indigo-600" />
-            </div>
-            <span className="text-xl font-bold text-gray-900" style={urbanist}>Harkly</span>
+          <a href="/">
+            <span className="text-xl font-bold tracking-widest text-white" style={{ fontFamily: 'var(--font-inter, sans-serif)' }}>HARKLY</span>
           </a>
-          <p className="text-sm text-gray-400">© {new Date().getFullYear()} Harkly. Все права защищены.</p>
-          <a href="/auth/login" className="text-sm text-gray-300 hover:text-gray-500 transition">Dev →</a>
+          <p className="text-sm text-white/30">© {new Date().getFullYear()} Harkly. Все права защищены.</p>
+          <a href="/auth/login" className="text-sm text-white/20 hover:text-white/40 transition">Dev →</a>
         </div>
       </Container>
     </footer>
@@ -619,7 +649,7 @@ function Footer() {
 
 export default function Home() {
   return (
-    <div className="bg-white text-gray-900" style={urbanist}>
+    <div className="harkly-bg text-white" style={urbanist}>
       <Nav />
       <main className="space-y-40 pb-40 pt-0">
         <Hero />

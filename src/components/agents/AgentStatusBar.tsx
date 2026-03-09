@@ -1,41 +1,67 @@
 "use client";
 
 import { useAgents } from "./useAgents";
-import { AgentStatus } from "@/types/agent";
-import { cn } from "@/lib/utils";
 
-const STATUS_COLORS: Record<AgentStatus, string> = {
-  idle: "bg-gray-300",
-  running: "bg-blue-400 animate-pulse",
-  done: "bg-green-400",
-  error: "bg-red-400",
-};
+interface AgentStatusBarProps {
+  onAgentsClick?: () => void;
+}
 
-export function AgentStatusBar() {
-  const { configs, sessions, activeAgentId, setActiveAgent } = useAgents();
+function PauseIcon() {
+  return (
+    <span className="flex items-center gap-[2px]">
+      <span className="w-[2px] h-[7px] bg-gray-400 rounded-[1px] inline-block" />
+      <span className="w-[2px] h-[7px] bg-gray-400 rounded-[1px] inline-block" />
+    </span>
+  );
+}
 
-  if (configs.length === 0) return null;
+function PlayIcon() {
+  return (
+    <span
+      className="inline-block w-0 h-0"
+      style={{
+        borderTop: "3px solid transparent",
+        borderBottom: "3px solid transparent",
+        borderLeft: "5px solid #9ca3af",
+      }}
+    />
+  );
+}
+
+export function AgentStatusBar({ onAgentsClick }: AgentStatusBarProps) {
+  const { configs, sessions } = useAgents();
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-black/10 rounded-full px-3 py-1.5 shadow-sm">
+    <div className="flex items-center gap-2 px-3 h-9 bg-white border-t border-gray-100">
       {configs.map((agent) => {
         const status = sessions[agent.id]?.status ?? "idle";
+        const isActive = status === "running";
+
+        if (isActive) {
+          return (
+            <span
+              key={agent.id}
+              className="flex items-center gap-1 text-xs italic text-gray-500"
+            >
+              <PauseIcon />
+              {agent.name}...
+            </span>
+          );
+        }
+
         return (
-          <button
-            key={agent.id}
-            className={cn(
-              "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs transition-colors",
-              activeAgentId === agent.id
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            )}
-            onClick={() => setActiveAgent(agent.id)}
-          >
-            <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_COLORS[status])} />
-            {agent.name}
-          </button>
+          <span key={agent.id} className="flex items-center gap-1">
+            <PlayIcon />
+          </span>
         );
       })}
+
+      <span
+        className="ml-auto text-xs text-gray-400 hover:text-black transition-colors cursor-pointer"
+        onClick={onAgentsClick}
+      >
+        Agents
+      </span>
     </div>
   );
 }

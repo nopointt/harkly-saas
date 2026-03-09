@@ -24,7 +24,10 @@ export function CanvasGrid({ panX, panY, zoom }: CanvasGridProps) {
       className="absolute inset-0 pointer-events-none"
       style={{
         backgroundColor: CANVAS_DEFAULTS.BACKGROUND_COLOR,
-        backgroundImage: `radial-gradient(circle, rgba(0,0,0,0.12) ${dotSize}px, transparent ${dotSize}px)`,
+        backgroundImage: `
+          linear-gradient(${CANVAS_DEFAULTS.GRID_COLOR} 1px, transparent 1px),
+          linear-gradient(90deg, ${CANVAS_DEFAULTS.GRID_COLOR} 1px, transparent 1px)
+        `,
         backgroundSize: `${gridSize}px ${gridSize}px`,
         backgroundPosition: `${offsetX}px ${offsetY}px`,
       }}
