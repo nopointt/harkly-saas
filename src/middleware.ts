@@ -1,7 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PUBLIC_PATHS = ['/', '/share']
+
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Public routes — skip auth check entirely
+  if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
