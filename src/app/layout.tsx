@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Urbanist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const urbanist = Urbanist({
   subsets: ["latin"],
+  variable: "--font-urbanist",
 });
 
 export const metadata: Metadata = {
-  title: "Harkly — Desk Research Automation",
-  description: "AI-powered desk research automation for UX researchers and Research Ops",
+  title: "Harkly — AI Desk Research Platform",
+  description: "От вопроса до артефакта с источниками — за часы, а не недели.",
 };
 
 export default function RootLayout({
@@ -24,10 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="ru">
+      <body className={`${inter.variable} ${urbanist.variable} font-sans antialiased`}>
         {children}
         <Toaster position="bottom-right" richColors />
       </body>
